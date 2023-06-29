@@ -1,5 +1,7 @@
 # reblessed
 
+#### Note: WIP branch
+
 #### If you'd like to request a feature, make a new issue
 
 ![reblessed-npm](https://img.shields.io/static/v1?label=npm&message=reblessed%20on%20npm&color=orange&link=https://www.npmjs.com/package/reblessed)
