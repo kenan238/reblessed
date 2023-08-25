@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*.js"],
+  "include": ["src/**/*.js", "src/**/*.ts"],
   "compilerOptions": {
     "rootDir": "src",
     // Tells TypeScript to read JS files, as
@@ -10,6 +10,7 @@
     // Generate d.ts files
     "declaration": true,
     "outDir": "dist",
-    "declarationMap": true
+    "declarationMap": true,
+    "strict": true
   }
 }
