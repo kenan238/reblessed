@@ -10,15 +10,16 @@ var slice = Array.prototype.slice;
  * EventEmitter
  */
 
+// @ts-ignore - We only care about our Eventemitter
 function EventEmitter() {
   if (!this._events) this._events = {};
 }
 
-EventEmitter.prototype.setMaxListeners = function(n) {
+EventEmitter.prototype.setMaxListeners = function(n: number) {
   this._maxListeners = n;
 };
 
-EventEmitter.prototype.addListener = function(type, listener) {
+EventEmitter.prototype.addListener = function(type: string, listener: Function) {
   if (!this._events[type]) {
     this._events[type] = listener;
   } else if (typeof this._events[type] === 'function') {
@@ -52,7 +53,7 @@ EventEmitter.prototype.removeListener = function(type, listener) {
 
 EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
 
-EventEmitter.prototype.removeAllListeners = function(type) {
+EventEmitter.prototype.removeAllListeners = function(type: string) {
   if (type) {
     delete this._events[type];
   } else {
@@ -60,7 +61,7 @@ EventEmitter.prototype.removeAllListeners = function(type) {
   }
 };
 
-EventEmitter.prototype.once = function(type, listener) {
+EventEmitter.prototype.once = function(type: string, listener: Function) {
   function on() {
     this.removeListener(type, on);
     return listener.apply(this, arguments);
@@ -69,13 +70,13 @@ EventEmitter.prototype.once = function(type, listener) {
   return this.on(type, on);
 };
 
-EventEmitter.prototype.listeners = function(type) {
+EventEmitter.prototype.listeners = function(type: string) {
   return typeof this._events[type] === 'function'
     ? [this._events[type]]
     : this._events[type] || [];
 };
 
-EventEmitter.prototype._emit = function(type, args) {
+EventEmitter.prototype._emit = function(type: string, args: any[]) {
   var handler = this._events[type]
     , ret;
 
@@ -183,7 +184,5 @@ EventEmitter.prototype.emit = function(type) {
  * Expose
  */
 
-exports = EventEmitter;
-exports.EventEmitter = EventEmitter;
-
-module.exports = exports;
+// convert these to modern export
+export default EventEmitter;

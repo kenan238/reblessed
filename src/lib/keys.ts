@@ -68,7 +68,7 @@ function emitKeypressEvents(stream) {
     stream.on('newListener', onNewListener);
   }
 }
-exports.emitKeypressEvents = emitKeypressEvents;
+export { emitKeypressEvents };
 
 /*
   Some patterns seen in terminal key escape codes, derived from combos seen
@@ -111,6 +111,19 @@ var escapeCodeReAnywhere = new RegExp([
   functionKeyCodeReAnywhere.source, metaKeyCodeReAnywhere.source, /\x1b./.source
 ].join('|'));
 
+interface Key {
+  sequence: string;
+  name?: string;
+  ctrl: boolean;
+  meta: boolean;
+  shift: boolean;
+  code?: string;
+}
+
+// what are the argument types
+// for emitKeys(stream, s)
+// the types are
+// (stream: any, s: any) => void
 function emitKeys(stream, s) {
   if (Buffer.isBuffer(s)) {
     if (s[0] > 127 && s[1] === undefined) {
@@ -124,7 +137,7 @@ function emitKeys(stream, s) {
   if (isMouse(s))
     return;
 
-  var buffer = [];
+  var buffer: string[] = [];
   var match;
   while (match = escapeCodeReAnywhere.exec(s)) {
     buffer = buffer.concat(s.slice(0, match.index).split(''));
@@ -135,7 +148,7 @@ function emitKeys(stream, s) {
 
   buffer.forEach(function(s) {
     var ch,
-        key = {
+        key: Key | undefined = {
           sequence: s,
           name: undefined,
           ctrl: false,

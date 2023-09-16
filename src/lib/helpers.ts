@@ -17,14 +17,14 @@ var unicode = require('./unicode');
 
 var helpers = exports;
 
-helpers.merge = function(a, b) {
+helpers.merge = function(a: any, b: any) {
   for (var key in b) {
     a[key] = b[key];
   }
   return a;
 };
 
-helpers.asort = function(obj) {
+helpers.asort = function(obj: any) {
   return obj.sort(function(a, b) {
     a = a.name.toLowerCase();
     b = b.name.toLowerCase();
@@ -41,11 +41,11 @@ helpers.asort = function(obj) {
   });
 };
 
-helpers.hsort = function(obj) {
+helpers.hsort = function(obj: any) {
   return obj.sort((a, b) => b.index - a.index);
 };
 
-helpers.findFile = function(start, target) {
+helpers.findFile = function(start: string, target: string) {
   return (function read(dir) {
     var files, file, stat, out;
 
@@ -84,18 +84,18 @@ helpers.findFile = function(start, target) {
 };
 
 // Escape text for tag-enabled elements.
-helpers.escape = function(text) {
+helpers.escape = function(text: string) {
   return text.replace(/[{}]/g, function(ch) {
     return ch === '{' ? '{open}' : '{close}';
   });
 };
 
-helpers.parseTags = function(text, screen) {
+helpers.parseTags = function(text: string, screen: Screen) {
   return helpers.Element.prototype._parseTags.call(
     { parseTags: true, screen: screen || helpers.Screen.global }, text);
 };
 
-helpers.generateTags = function(style, text) {
+helpers.generateTags = function(style: any, text: string) {
   var open = ''
     , close = '';
 
@@ -124,7 +124,7 @@ helpers.generateTags = function(style, text) {
   };
 };
 
-helpers.attrToBinary = function(style, element) {
+helpers.attrToBinary = function(style: any, element: Element) {
   return helpers.Element.prototype.sattr.call(element || {}, style);
 };
 

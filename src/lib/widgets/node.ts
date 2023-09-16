@@ -14,11 +14,18 @@ var EventEmitter = require('../events').EventEmitter;
  * Node
  */
 
-function Node(options) {
+interface NodeOptions {
+  screen?: Screen;
+  parent?: Node;
+  children?: Node[];
+}
+
+function Node(options: NodeOptions): any {
   var self = this;
   var Screen = require('./screen');
 
   if (!(this instanceof Node)) {
+    // @ts-ignore
     return new Node(options);
   }
 
@@ -61,6 +68,7 @@ function Node(options) {
   this.parent = options.parent || null;
   this.children = [];
   this.$ = this._ = this.data = {};
+  // @ts-ignore
   this.uid = Node.uid++;
   this.index = this.index != null ? this.index : -1;
 
@@ -75,21 +83,29 @@ function Node(options) {
   (options.children || []).forEach(this.append.bind(this));
 }
 
+// @ts-ignore
 Node.uid = 0;
 
+// @ts-ignore
 Node.prototype.__proto__ = EventEmitter.prototype;
 
+// @ts-ignore
 Node.prototype.type = 'node';
 
-Node.prototype.insert = function(element, i) {
+// @ts-ignore - Get ready to see typescript not understand prototypes
+Node.prototype.insert = function(element: Element, i: number) {
   var self = this;
 
+  // @ts-ignore
   if (element.screen && element.screen !== this.screen) {
     throw new Error('Cannot switch a node\'s screen.');
   }
 
+  // @ts-ignore
   element.detach();
+  // @ts-ignore
   element.parent = this;
+  // @ts-ignore
   element.screen = this.screen;
 
   if (i === 0) {
@@ -100,13 +116,18 @@ Node.prototype.insert = function(element, i) {
     this.children.splice(i, 0, element);
   }
 
+  // @ts-ignore
   element.emit('reparent', this);
   this.emit('adopt', element);
 
   (function emit(el) {
+    // @ts-ignore
     var n = el.detached !== self.detached;
+    // @ts-ignore
     el.detached = self.detached;
+    // @ts-ignore
     if (n) el.emit('attach');
+    // @ts-ignore
     el.children.forEach(emit);
   })(element);
 
@@ -115,24 +136,29 @@ Node.prototype.insert = function(element, i) {
   }
 };
 
+// @ts-ignore
 Node.prototype.prepend = function(element) {
   this.insert(element, 0);
 };
 
+// @ts-ignore
 Node.prototype.append = function(element) {
   this.insert(element, this.children.length);
 };
 
+// @ts-ignore
 Node.prototype.insertBefore = function(element, other) {
   var i = this.children.indexOf(other);
   if (~i) this.insert(element, i);
 };
 
+// @ts-ignore
 Node.prototype.insertAfter = function(element, other) {
   var i = this.children.indexOf(other);
   if (~i) this.insert(element, i + 1);
 };
 
+// @ts-ignore
 Node.prototype.remove = function(element) {
   if (element.parent !== this) return;
 
@@ -165,14 +191,17 @@ Node.prototype.remove = function(element) {
   }
 };
 
+// @ts-ignore
 Node.prototype.detach = function() {
   if (this.parent) this.parent.remove(this);
 };
 
+// @ts-ignore
 Node.prototype.free = function() {
   return;
 };
 
+// @ts-ignore
 Node.prototype.destroy = function() {
   this.detach();
   this.forDescendants(function(el) {
@@ -182,6 +211,7 @@ Node.prototype.destroy = function() {
   }, this);
 };
 
+// @ts-ignore
 Node.prototype.forDescendants = function(iter, s) {
   if (s) iter(this);
   this.children.forEach(function emit(el) {
@@ -190,6 +220,7 @@ Node.prototype.forDescendants = function(iter, s) {
   });
 };
 
+// @ts-ignore
 Node.prototype.forAncestors = function(iter, s) {
   var el = this;
   if (s) iter(this);
@@ -198,23 +229,28 @@ Node.prototype.forAncestors = function(iter, s) {
   }
 };
 
+// @ts-ignore
 Node.prototype.collectDescendants = function(s) {
   var out = [];
+  // @ts-ignore
   this.forDescendants(function(el) {
     out.push(el);
   }, s);
   return out;
 };
 
+// @ts-ignore
 Node.prototype.collectAncestors = function(s) {
-  var out = [];
+  var out: Element[] = [];
   this.forAncestors(function(el) {
     out.push(el);
   }, s);
   return out;
 };
 
+// @ts-ignore
 Node.prototype.emitDescendants = function() {
+  // @ts-ignore
   var args = Array.prototype.slice(arguments)
     , iter;
 
@@ -228,7 +264,9 @@ Node.prototype.emitDescendants = function() {
   }, true);
 };
 
+// @ts-ignore
 Node.prototype.emitAncestors = function() {
+  // @ts-ignore
   var args = Array.prototype.slice(arguments)
     , iter;
 
@@ -242,7 +280,8 @@ Node.prototype.emitAncestors = function() {
   }, true);
 };
 
-Node.prototype.hasDescendant = function(target) {
+// @ts-ignore
+Node.prototype.hasDescendant = function(target: Element) {
   return (function find(el) {
     for (var i = 0; i < el.children.length; i++) {
       if (el.children[i] === target) {
@@ -256,7 +295,8 @@ Node.prototype.hasDescendant = function(target) {
   })(this);
 };
 
-Node.prototype.hasAncestor = function(target) {
+// @ts-ignore
+Node.prototype.hasAncestor = function(target: string) {
   var el = this;
   while (el = el.parent) {
     if (el === target) return true;
@@ -264,14 +304,15 @@ Node.prototype.hasAncestor = function(target) {
   return false;
 };
 
-Node.prototype.get = function(name, value) {
+// @ts-ignore
+Node.prototype.get = function(name: string, value: any) {
   if (this.data.hasOwnProperty(name)) {
     return this.data[name];
   }
   return value;
 };
-
-Node.prototype.set = function(name, value) {
+// @ts-ignore
+Node.prototype.set = function(name: string, value: any) {
   return this.data[name] = value;
 };
 

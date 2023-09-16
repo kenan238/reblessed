@@ -127,7 +127,7 @@ exports.mixColors = function(c1, c2, alpha) {
   return exports.match([r1, g1, b1]);
 };
 
-exports.blend = function blend(attr, attr2, alpha) {
+exports.blend = function blend(attr, attr2, alpha: number) {
   var name, i, c, nc;
 
   var bg = attr & 0x1ff;
@@ -137,7 +137,9 @@ exports.blend = function blend(attr, attr2, alpha) {
     if (bg2 === 0x1ff) bg2 = 0;
     bg = exports.mixColors(bg, bg2, alpha);
   } else {
+    // @ts-ignore
     if (blend._cache[bg] != null) {
+      // @ts-ignore
       bg = blend._cache[bg];
     // } else if (bg < 8) {
     //   bg += 8;
@@ -151,6 +153,7 @@ exports.blend = function blend(attr, attr2, alpha) {
             c = exports.vcolors[bg];
             nc = exports.vcolors[i];
             if (nc[0] + nc[1] + nc[2] < c[0] + c[1] + c[2]) {
+              // @ts-ignore
               blend._cache[bg] = i;
               bg = i;
               break;
@@ -177,7 +180,9 @@ exports.blend = function blend(attr, attr2, alpha) {
       fg = exports.mixColors(fg, fg2, alpha);
     }
   } else {
+    // @ts-ignore
     if (blend._cache[fg] != null) {
+      // @ts-ignore
       fg = blend._cache[fg];
     // } else if (fg < 8) {
     //   fg += 8;
@@ -191,6 +196,7 @@ exports.blend = function blend(attr, attr2, alpha) {
             c = exports.vcolors[fg];
             nc = exports.vcolors[i];
             if (nc[0] + nc[1] + nc[2] < c[0] + c[1] + c[2]) {
+              // @ts-ignore
               blend._cache[fg] = i;
               fg = i;
               break;
@@ -211,7 +217,7 @@ exports.blend._cache = {};
 
 exports._cache = {};
 
-exports.reduce = function(color, total) {
+exports.reduce = function(color: number, total: number) {
   if (color >= 16 && total <= 16) {
     color = exports.ccolors[color];
   } else if (color >= 8 && total <= 8) {
@@ -247,7 +253,7 @@ exports.xterm = [
 
 // Seed all 256 colors. Assume xterm defaults.
 // Ported from the xterm color generation script.
-exports.colors = (function() {
+const colors = (function() {
   var cols = exports.colors = []
     , _cols = exports.vcolors = []
     , r
@@ -263,7 +269,9 @@ exports.colors = (function() {
   }
 
   function push(i, r, g, b) {
+    // @ts-ignore
     cols[i] = '#' + hex(r) + hex(g) + hex(b);
+    // @ts-ignore
     _cols[i] = [r, g, b];
   }
 
@@ -534,3 +542,5 @@ Object.keys(exports.ccolors).forEach(function(name) {
   });
   delete exports.ccolors[name];
 });
+
+export { colors }

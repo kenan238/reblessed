@@ -73,8 +73,23 @@ function send_config(socket, Gpm_Connect,  callback) {
 //   short wdx, wdy;
 // } Gpm_Event;
 
+interface GpmEvent {
+  buttons: number;
+  modifiers: number;
+  vc: number;
+  dx: number;
+  dy: number;
+  x: number;
+  y: number;
+  type: number;
+  clicks: number;
+  margin: number;
+  wdx: number;
+  wdy: number;
+}
+
 function parseEvent(raw) {
-  var evnt = {};
+  let evnt: GpmEvent = {} as GpmEvent;
   evnt.buttons = raw[0];
   evnt.modifiers = raw[1];
   evnt.vc = raw.readUInt16LE(2);
@@ -90,7 +105,16 @@ function parseEvent(raw) {
   return evnt;
 }
 
-function GpmClient(options) {
+interface GpmClientOptions {
+  eventMask: number;
+  defaultMask: number;
+  minMod: number;
+  maxMod: number;
+  pid: number;
+  vc: number;
+}
+
+function GpmClient(options: GpmClientOptions): void {
   if (!(this instanceof GpmClient)) {
     return new GpmClient(options);
   }
@@ -106,7 +130,7 @@ function GpmClient(options) {
   } catch (e) {
     ;
   }
-  var tty = /tty[0-9]+$/.exec(path);
+  var tty: any = /tty[0-9]+$/.exec(path);
   if (tty === null) {
     // TODO: should  also check for /dev/input/..
   }
@@ -114,6 +138,7 @@ function GpmClient(options) {
   var vc;
   if (tty) {
     tty = tty[0];
+    // @ts-ignore - It works though
     vc = +/[0-9]+$/.exec(tty)[0];
   }
 
