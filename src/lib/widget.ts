@@ -4,9 +4,7 @@
  * https://github.com/chjj/blessed
  */
 
-var widget = exports;
-
-widget.classes = [
+let classes = [
   'Node',
   'Screen',
   'Element',
@@ -44,8 +42,12 @@ widget.classes = [
   'StreamBox'
 ];
 
-for (var name of widget.classes) {
-  var file = name.toLowerCase();
+let widget = {
+  aliases: {},
+};
+
+for (let name of classes) {
+  let file = name.toLowerCase();
   widget[name] = widget[file] = require('./widgets/' + file);
 }
 
@@ -59,3 +61,5 @@ Object.keys(widget.aliases).forEach(function(key) {
   widget[key] = widget[name];
   widget[key.toLowerCase()] = widget[name];
 });
+
+export default widget;

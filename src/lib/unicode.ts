@@ -110,9 +110,12 @@ var floor = Math.floor;
  * Wide, Surrogates, and Combining
  */
 
-exports.charWidth = function(str, i) {
-  var point = typeof str !== 'number'
-    ? exports.codePointAt(str, i || 0)
+let reblessed = require('../');
+
+const charWidth = function(str: string, i: number) {
+  // @ts-ignore
+  var point: number = typeof str !== 'number'
+    ? codePointAt(str, i || 0)
     : str;
 
   // nul
@@ -120,11 +123,8 @@ exports.charWidth = function(str, i) {
 
   // tab
   if (point === 0x09) {
-    if (!exports.blessed) {
-      exports.blessed = require('../');
-    }
-    return exports.blessed.screen.global
-      ? exports.blessed.screen.global.tabc.length
+    return reblessed.screen.global
+      ? reblessed.screen.global.tabc.length
       : 8;
   }
 
@@ -135,7 +135,7 @@ exports.charWidth = function(str, i) {
 
   // search table of non-spacing characters
   // is ucs combining or C0/C1 control character
-  if (exports.combining[point]) {
+  if (combining[point]) {
     return 0;
   }
 
@@ -388,16 +388,16 @@ exports.charWidth = function(str, i) {
   return 1;
 };
 
-exports.strWidth = function(str) {
+const strWidth = function(str) {
   var width = 0;
   for (var i = 0; i < str.length; i++) {
-    width += exports.charWidth(str, i);
-    if (exports.isSurrogate(str, i)) i++;
+    width += charWidth(str, i);
+    if (isSurrogate(str, i)) i++;
   }
   return width;
 };
 
-exports.getByteLength = function(str) {
+const getByteLength = function(str: string) {
   str = String(str); // make sure its a string
   var byteLen = 0;
   for (let i = 0; i < str.length; i++) {
@@ -412,14 +412,15 @@ exports.getByteLength = function(str) {
   return byteLen;
 };
 
-exports.isSurrogate = function(str, i) {
-  var point = typeof str !== 'number'
-    ? exports.codePointAt(str, i || 0)
+const isSurrogate = function(str, i) {
+  // @ts-ignore
+  var point: number = typeof str !== 'number'
+    ? codePointAt(str, i || 0)
     : str;
   return point > 0x00ffff;
 };
 
-exports.combiningTable = [
+const combiningTable = [
   [0x0300, 0x036F],   [0x0483, 0x0486],   [0x0488, 0x0489],
   [0x0591, 0x05BD],   [0x05BF, 0x05BF],   [0x05C1, 0x05C2],
   [0x05C4, 0x05C5],   [0x05C7, 0x05C7],   [0x0600, 0x0603],
@@ -470,25 +471,26 @@ exports.combiningTable = [
   [0xE0100, 0xE01EF]
 ];
 
-exports.combining = exports.combiningTable.reduce(function(out, row) {
+const combining = combiningTable.reduce(function(out, row) {
   for (var i = row[0]; i <= row[1]; i++) {
     out[i] = true;
   }
   return out;
 }, {});
 
-exports.isCombining = function(str, i) {
-  var point = typeof str !== 'number'
-    ? exports.codePointAt(str, i || 0)
+const isCombining = function(str, i) {
+  // @ts-ignore
+  var point: number = typeof str !== 'number'
+    ? codePointAt(str, i || 0)
     : str;
-  return exports.combining[point] === true;
+  return combining[point] === true;
 };
 
 /**
  * Code Point Helpers
  */
 
-exports.codePointAt = function(str, position) {
+const codePointAt = function(str: string, position: number) {
   if (str == null) {
     throw TypeError();
   }
@@ -536,12 +538,12 @@ exports.codePointAt = function(str, position) {
 //   return point;
 // };
 
-exports.fromCodePoint = function() {
+const fromCodePoint = function(...codePoints: number[]) {
   if (String.fromCodePoint) {
     return String.fromCodePoint.apply(String, arguments);
   }
   var MAX_SIZE = 0x4000;
-  var codeUnits = [];
+  var codeUnits: number[] = [];
   var highSurrogate;
   var lowSurrogate;
   var index = -1;
@@ -580,15 +582,15 @@ exports.fromCodePoint = function() {
 /**
  * Regexes
  */
+interface UnicodeChars {
+  wide: RegExp;
+  swide: RegExp;
+  all: RegExp;
+  surrogate: RegExp;
+  combining: RegExp;
+}
 
-exports.chars = {};
-
-// Double width characters that are _not_ surrogate pairs.
-// NOTE: 0x20000 - 0x2fffd and 0x30000 - 0x3fffd are not necessary for this
-// regex anyway. This regex is used to put a blank char after wide chars to
-// be eaten, however, if this is a surrogate pair, parseContent already adds
-// the extra one char because its length equals 2 instead of 1.
-exports.chars.wide = new RegExp('(['
+const charsWide = new RegExp('(['
   + '\\u1100-\\u115f' // Hangul Jamo init. consonants
   + '\\u2329\\u232a'
   + '\\u2e80-\\u303e\\u3040-\\ua4cf' // CJK ... Yi
@@ -600,8 +602,7 @@ exports.chars.wide = new RegExp('(['
   + '\\uffe0-\\uffe6'
   + '])', 'g');
 
-// All surrogate pair wide chars.
-exports.chars.swide = new RegExp('('
+const charsSwide = new RegExp('('
   // 0x20000 - 0x2fffd:
   + '[\\ud840-\\ud87f][\\udc00-\\udffd]'
   + '|'
@@ -609,26 +610,15 @@ exports.chars.swide = new RegExp('('
   + '[\\ud880-\\ud8bf][\\udc00-\\udffd]'
   + ')', 'g');
 
-// All wide chars including surrogate pairs.
-exports.chars.all = new RegExp('('
-  + exports.chars.swide.source.slice(1, -1)
-  + '|'
-  + exports.chars.wide.source.slice(1, -1)
-  + ')', 'g');
-
-// Regex to detect a surrogate pair.
-exports.chars.surrogate = /[\ud800-\udbff][\udc00-\udfff]/g;
-
-// Regex to find combining characters.
-exports.chars.combining = exports.combiningTable.reduce(function(out, row) {
+const charsCombining = combiningTable.reduce((out, row) => {
   var low, high, range;
   if (row[0] > 0x00ffff) {
-    low = exports.fromCodePoint(row[0]);
+    low = fromCodePoint(row[0]);
     low = [
       hexify(low.charCodeAt(0)),
       hexify(low.charCodeAt(1))
     ];
-    high = exports.fromCodePoint(row[1]);
+    high = fromCodePoint(row[1]);
     high = [
       hexify(high.charCodeAt(0)),
       hexify(high.charCodeAt(1))
@@ -647,7 +637,29 @@ exports.chars.combining = exports.combiningTable.reduce(function(out, row) {
   return out;
 }, '[');
 
-exports.chars.combining = new RegExp(exports.chars.combining, 'g');
+const chars: UnicodeChars = {
+  // Double width characters that are _not_ surrogate pairs.
+  // NOTE: 0x20000 - 0x2fffd and 0x30000 - 0x3fffd are not necessary for this
+  // regex anyway. This regex is used to put a blank char after wide chars to
+  // be eaten, however, if this is a surrogate pair, parseContent already adds
+  // the extra one char because its length equals 2 instead of 1.
+  wide: charsWide,
+
+  // All surrogate pair wide chars.
+  swide: charsSwide,
+
+  // All wide chars including surrogate pairs.
+  all: new RegExp('('
+  + charsSwide.source.slice(1, -1)
+  + '|'
+  + charsWide.source.slice(1, -1)
+  + ')', 'g'),
+
+  // Regex to detect a surrogate pair.
+  surrogate: /[\ud800-\udbff][\udc00-\udfff]/g,
+
+  combining: new RegExp(charsCombining, 'g'),
+};
 
 function hexify(n) {
   n = n.toString(16);

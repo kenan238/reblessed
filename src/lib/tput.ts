@@ -30,7 +30,7 @@ var assert = require('assert')
  * Tput
  */
 
-function Tput(options) {
+function Tput(options): void {
   if (!(this instanceof Tput)) {
     return new Tput(options);
   }
@@ -296,15 +296,51 @@ Tput.prototype._tprefix = function(prefix, term, soft) {
  * All shorts are little-endian
  */
 
+// write a terminfo interface for this.
+interface Terminfo {
+  header: {
+    dataSize: number;
+    headerSize: number;
+    magicNumber: number;
+    namesSize: number;
+    boolCount: number;
+    numCount: number;
+    strCount: number;
+    strTableSize: number;
+    total: number;
+    extended?: {
+      dataSize: number;
+      headerSize: number;
+      boolCount: number;
+      numCount: number;
+      strCount: number;
+      strTableSize: number;
+      lastStrTableOffset: number;
+      total: number;
+    }
+  };
+  name: string;
+  names: string[];
+  desc: string;
+  dir: string;
+  file: string;
+  bools: { [key: string]: boolean };
+  numbers: { [key: string]: number };
+  strings: { [key: string]: string };
+  all: { [key: string]: any };
+  methods: { [key: string]: any };
+  features: { [key: string]: any };
+}
+
 Tput.prototype.parseTerminfo = function(data, file) {
-  var info = {}
-    , extended
+  let info: Terminfo = {} as Terminfo
+  let extended
     , l = data.length
     , i = 0
     , v
     , o;
 
-  var h = info.header = {
+  var tiHeaderIncomplete = {
     dataSize: data.length,
     headerSize: 12,
     magicNumber: (data[1] << 8) | data[0],
@@ -312,20 +348,23 @@ Tput.prototype.parseTerminfo = function(data, file) {
     boolCount: (data[5] << 8) | data[4],
     numCount: (data[7] << 8) | data[6],
     strCount: (data[9] << 8) | data[8],
-    strTableSize: (data[11] << 8) | data[10]
+    strTableSize: (data[11] << 8) | data[10],
+    total: 0, // Please shut up typescript, I know what I'm doing.
   };
 
-  h.total = h.headerSize
-    + h.namesSize
-    + h.boolCount
-    + h.numCount * 2
-    + h.strCount * 2
-    + h.strTableSize;
+  tiHeaderIncomplete.total = tiHeaderIncomplete.headerSize
+    + tiHeaderIncomplete.namesSize
+    + tiHeaderIncomplete.boolCount
+    + tiHeaderIncomplete.numCount * 2
+    + tiHeaderIncomplete.strCount * 2
+    + tiHeaderIncomplete.strTableSize;
+  
+  info.header = tiHeaderIncomplete;
 
-  i += h.headerSize;
+  i += tiHeaderIncomplete.headerSize;
 
   // Names Section
-  var names = data.toString('ascii', i, i + h.namesSize - 1)
+  var names = data.toString('ascii', i, i + tiHeaderIncomplete.namesSize - 1)
     , parts = names.split('|')
     , name = parts[0]
     , desc = parts.pop();
@@ -337,7 +376,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
   info.dir = path.resolve(file, '..', '..');
   info.file = file;
 
-  i += h.namesSize - 1;
+  i += tiHeaderIncomplete.namesSize - 1;
 
   // Names is nul-terminated.
   assert.equal(data[i], 0);
@@ -347,7 +386,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
   // One byte for each flag
   // Same order as <term.h>
   info.bools = {};
-  l = i + h.boolCount;
+  l = i + tiHeaderIncomplete.boolCount;
   o = 0;
   for (; i < l; i++) {
     v = Tput.bools[o++];
@@ -362,7 +401,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
 
   // Numbers Section
   info.numbers = {};
-  l = i + h.numCount * 2;
+  l = i + tiHeaderIncomplete.numCount * 2;
   o = 0;
   for (; i < l; i += 2) {
     v = Tput.numbers[o++];
@@ -374,21 +413,23 @@ Tput.prototype.parseTerminfo = function(data, file) {
   }
 
   // Strings Section
-  info.strings = {};
-  l = i + h.strCount * 2;
+  const infoStrings = {};
+  l = i + tiHeaderIncomplete.strCount * 2;
   o = 0;
   for (; i < l; i += 2) {
     v = Tput.strings[o++];
     if (data[i + 1] === 0xff && data[i] === 0xff) {
-      info.strings[v] = -1;
+      // @ts-ignore: They will be converted back to strings;
+      infoStrings[v] = -1;
     } else {
-      info.strings[v] = (data[i + 1] << 8) | data[i];
+      // @ts-ignore
+      infoStrings[v] = (data[i + 1] << 8) | data[i];
     }
   }
 
   // String Table
   Object.keys(info.strings).forEach(function(key) {
-    if (info.strings[key] === -1) {
+    if (infoStrings[key] === -1) {
       delete info.strings[key];
       return;
     }
@@ -397,7 +438,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
     // to set -1, but it appears to have {0xfe, 0xff} instead of {0xff, 0xff}.
     // TODO: Possibly handle errors gracefully below, as well as in the
     // extended info. Also possibly do: `if (info.strings[key] >= data.length)`.
-    if (info.strings[key] === 65534) {
+    if (infoStrings[key] === 65534) {
       delete info.strings[key];
       return;
     }
@@ -412,10 +453,12 @@ Tput.prototype.parseTerminfo = function(data, file) {
     info.strings[key] = data.toString('ascii', s, j);
   });
 
+  info.strings = infoStrings;
+
   // Extended Header
   if (this.extended !== false) {
     i--;
-    i += h.strTableSize;
+    i += tiHeaderIncomplete.strTableSize;
     if (i % 2) {
       assert.equal(data[i], 0);
       i++;
@@ -490,19 +533,36 @@ Tput.prototype.parseTerminfo = function(data, file) {
 //   h.symOffsetCount = h.strTableSize - h.strCount;
 //   h.symOffsetSize = (h.strTableSize - h.strCount) * 2;
 
+interface ExtendedTerminfo {
+  header: {
+    dataSize: number;
+    headerSize: number;
+    boolCount: number;
+    numCount: number;
+    strCount: number;
+    strTableSize: number;
+    lastStrTableOffset: number;
+    total: number;
+  };
+  bools: { [key: string]: boolean };
+  numbers: { [key: string]: number };
+  strings: { [key: string]: string };
+}
+
 Tput.prototype.parseExtended = function(data) {
-  var info = {}
+  let info: ExtendedTerminfo = {} as ExtendedTerminfo
     , l = data.length
     , i = 0;
 
-  var h = info.header = {
+  var h = {
     dataSize: data.length,
     headerSize: 10,
     boolCount: (data[i + 1] << 8) | data[i + 0],
     numCount: (data[i + 3] << 8) | data[i + 2],
     strCount: (data[i + 5] << 8) | data[i + 4],
     strTableSize: (data[i + 7] << 8) | data[i + 6],
-    lastStrTableOffset: (data[i + 9] << 8) | data[i + 8]
+    lastStrTableOffset: (data[i + 9] << 8) | data[i + 8],
+    total: 0,
   };
 
   // h.symOffsetCount = h.strTableSize - h.strCount;
@@ -513,11 +573,13 @@ Tput.prototype.parseExtended = function(data) {
     + h.strCount * 2
     + h.strTableSize;
 
+  info.header = h;
+
   i += h.headerSize;
 
   // Booleans Section
   // One byte for each flag
-  var _bools = [];
+  var _bools: boolean[] = [];
   l = i + h.boolCount;
   for (; i < l; i++) {
     _bools.push(data[i] === 1);
@@ -530,7 +592,7 @@ Tput.prototype.parseExtended = function(data) {
   }
 
   // Numbers Section
-  var _numbers = [];
+  var _numbers: number[] = [];
   l = i + h.numCount * 2;
   for (; i < l; i += 2) {
     if (data[i + 1] === 0xff && data[i] === 0xff) {
@@ -541,7 +603,7 @@ Tput.prototype.parseExtended = function(data) {
   }
 
   // Strings Section
-  var _strings = [];
+  var _strings: stirng[] = [];
   l = i + h.strCount * 2;
   for (; i < l; i += 2) {
     if (data[i + 1] === 0xff && data[i] === 0xff) {
@@ -557,14 +619,14 @@ Tput.prototype.parseExtended = function(data) {
   // i += h.symOffsetCount * 2;
 
   // String Table
-  var high = 0;
+  let high = 0;
   _strings.forEach(function(offset, k) {
     if (offset === -1) {
       _strings[k] = '';
       return;
     }
 
-    var s = i + offset
+    let s = i + offset
       , j = s;
 
     while (data[j]) j++;
@@ -585,7 +647,7 @@ Tput.prototype.parseExtended = function(data) {
   i += high + 1;
   l = data.length;
 
-  var sym = []
+  var sym: string[] = []
     , j;
 
   for (; i < l; i++) {
@@ -3015,8 +3077,4 @@ Tput.utoa = Tput.prototype.utoa = {
  * Expose
  */
 
-exports = Tput;
-exports.sprintf = sprintf;
-exports.tryRead = tryRead;
-
-module.exports = exports;
+export { Tput, sprintf, tryRead };
