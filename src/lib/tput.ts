@@ -26,6 +26,8 @@ var assert = require('assert')
   , fs = require('fs')
   , cp = require('child_process');
 
+// @ts-nocheck - I don't want to deal with this right now.
+
 /**
  * Tput
  */
@@ -603,12 +605,13 @@ Tput.prototype.parseExtended = function(data) {
   }
 
   // Strings Section
-  var _strings: stirng[] = [];
+  var _strings: string[] = [];
   l = i + h.strCount * 2;
   for (; i < l; i += 2) {
     if (data[i + 1] === 0xff && data[i] === 0xff) {
       _strings.push(-1);
     } else {
+      // @ts-ignore: Will be converted later
       _strings.push((data[i + 1] << 8) | data[i]);
     }
   }
@@ -621,13 +624,14 @@ Tput.prototype.parseExtended = function(data) {
   // String Table
   let high = 0;
   _strings.forEach(function(offset, k) {
+    // @ts-ignore
     if (offset === -1) {
       _strings[k] = '';
       return;
     }
 
     let s = i + offset
-      , j = s;
+      , j = Number(s);
 
     while (data[j]) j++;
 
@@ -2430,12 +2434,15 @@ Tput.alias = {};
   Object.keys(Tput._alias[type]).forEach(function(key) {
     var aliases = Tput._alias[type][key];
     Tput.alias[key] = [aliases[0]];
+    // @ts-ignore
     Tput.alias[key].terminfo = aliases[0];
+    // @ts-ignore
     Tput.alias[key].termcap = aliases[1];
   });
 });
 
 // Bools
+// @ts-ignore
 Tput.alias.no_esc_ctlc.push('beehive_glitch');
 Tput.alias.dest_tabs_magic_smso.push('teleray_glitch');
 

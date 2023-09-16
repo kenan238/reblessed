@@ -29,4 +29,4 @@ blessed.helpers.merge(blessed, blessed.widget);
  * Expose
  */
 
-module.exports = blessed;
+export default blessed;

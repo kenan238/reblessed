@@ -24,7 +24,7 @@ var nextTick = global.setImmediate || process.nextTick.bind(process);
  * Program
  */
 
-function Program(options) {
+function Program(options): void {
   var self = this;
 
   if (!(this instanceof Program)) {
@@ -82,6 +82,7 @@ function Program(options) {
   // NOTE: lxterminal does not provide an env variable to check for.
   // NOTE: gnome-terminal and sakura use a later version of VTE
   // which provides VTE_VERSION as well as supports SGR events.
+  // @ts-ignore
   this.isXFCE = /xfce/i.test(process.env.COLORTERM);
   this.isTerminator = !!process.env.TERMINATOR_UUID;
   this.isLXDE = false;
@@ -91,6 +92,7 @@ function Program(options) {
     this.isLXDE;
 
   // xterm and rxvt - not accurate
+  // @ts-ignore
   this.isRxvt = /rxvt/i.test(process.env.COLORTERM);
   this.isXterm = false;
 
@@ -101,6 +103,7 @@ function Program(options) {
       var version = cp.execFileSync('tmux', ['-V'], {
         encoding: 'utf8'
       });
+      // @ts-ignore - No it isnt null
       return +/^tmux ([\d.]+)/i.exec(version.trim().split('\n')[0])[1];
     } catch (e) {
       return 2;
@@ -132,9 +135,12 @@ Program.bind = function(program) {
     Program.total++;
   }
 
+  // @ts-ignore - We know, we know
   if (Program._bound) return;
+  // @ts-ignore - It's because we're creating it, typescript
   Program._bound = true;
 
+  // @ts-ignore - We know, we know
   unshiftEvent(process, 'exit', Program._exitHandler = function() {
     Program.instances.forEach(function(program) {
       // Potentially reset window title on exit:
@@ -478,9 +484,12 @@ Program.prototype.destroy = function() {
     if (Program.total === 0) {
       Program.global = null;
 
+      // @ts-ignore - It does exist
       process.removeListener('exit', Program._exitHandler);
+      // @ts-ignore - It does exist
       delete Program._exitHandler;
 
+      // @ts-ignore - It does exist
       delete Program._bound;
     }
 
@@ -1043,8 +1052,60 @@ Program.prototype.bindResponse = function() {
   });
 };
 
+// make an interface for the out variable
+interface BindResponse {
+  event: string;
+  code: string;
+  type: string;
+  term: string;
+  advancedVideo: boolean;
+  cols132: boolean;
+  printer: boolean;
+  selectiveErase: boolean;
+  userDefinedKeys: boolean;
+  nationalReplacementCharsets: boolean;
+  technicalCharacters: boolean;
+  userWindows: boolean;
+  horizontalScrolling: boolean;
+  ansiColor: boolean;
+  ansiTextLocator: boolean;
+  deviceAttributes: BindResponse;
+  firmwareVersion: number;
+  romCartridgeRegistrationNumber: number;
+  _bindResponse(s: string | Buffer): void;
+  status: any;
+  deviceStatus: string;
+  error: string;
+  printerStatus: string;
+  UDKStatus: string;
+  locator: string;
+  text: string;
+  keyboardStatus: string;
+  x: number;
+  y: number;
+  page: number;
+  cursor: string;
+  ps: number;
+  pt: number;
+  locatorPosition: BindResponse;
+  col: number;
+  row: number;
+  mask: number;
+  windowTitle: string;
+  windowIconLabel: string;
+  width: number;
+  height: number;
+  size: { height: number; width: number; };
+  screenSizeCharacters: { height: number; width: number; };
+  textAreaSizeCharacters: { height: number; width: number; };
+  windowSizePixels: { height: number; width: number; };
+  windowPosition: { x: number, y: number };
+  position: { x: number, y: number };
+  windowState: string;
+  state: string;
+}
 Program.prototype._bindResponse = function(s) {
-  var out = {},
+  let out: BindResponse = {} as BindResponse,
     parts;
 
   if (Buffer.isBuffer(s)) {
@@ -2560,7 +2621,7 @@ Program.prototype._attr = function(param, val) {
 
   if (parts.length > 1) {
     var used = {},
-      out = [];
+      out: any = [];
 
     parts.forEach(function(part) {
       part = self._attr(part, val).slice(2, -1);
@@ -3333,10 +3394,26 @@ Program.prototype.rmcup =
     return this.resetMode('?1049');
   };
 
+interface EnableMouseOptions {
+  sgrMouse?: boolean;
+  utfMouse?: boolean;
+  vt200Mouse?: boolean;
+  urxvtMouse?: boolean;
+  x10Mouse?: boolean;
+  decMouse?: boolean;
+  ptermMouse?: boolean;
+  jsbtermMouse?: boolean;
+  vt200Hilite?: boolean;
+  gpmMouse?: boolean;
+  cellMotion?: boolean;
+  allMotion?: boolean;
+  sendFocus?: boolean;
+}
+
 Program.prototype.enableMouse = function() {
   if (process.env.BLESSED_FORCE_MODES) {
     var modes = process.env.BLESSED_FORCE_MODES.split(',');
-    var options = {};
+    let options: EnableMouseOptions = {};
     for (var n = 0; n < modes.length; ++n) {
       var pair = modes[n].split('=');
       var v = pair[1] !== '0';
@@ -4302,7 +4379,7 @@ function unshiftEvent(obj, event, listener) {
   });
 }
 
-function merge(out) {
+function merge(...out) {
   slice.call(arguments, 1).forEach(function(obj) {
     Object.keys(obj).forEach(function(key) {
       out[key] = obj[key];
