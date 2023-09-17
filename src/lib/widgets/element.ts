@@ -264,7 +264,7 @@ Element.prototype.sattr = function(style, fg, bg) {
     | colors.convert(bg);
 };
 
-Element.prototype.onScreenEvent = function(type, handler) {
+Element.prototype.onScreenEvent = function(type: string, handler: Function) {
   var listeners = this._slisteners = this._slisteners || [];
   listeners.push({ type: type, handler: handler });
   this.screen.on(type, handler);

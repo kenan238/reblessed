@@ -231,8 +231,8 @@ Node.prototype.forAncestors = function(iter, s) {
 
 // @ts-ignore
 Node.prototype.collectDescendants = function(s) {
-  var out = [];
-  // @ts-ignore
+  var out: Element[] = [];
+  // @ts-ignore 
   this.forDescendants(function(el) {
     out.push(el);
   }, s);

@@ -15,7 +15,7 @@ var Box = require('./box');
  * Message / Error
  */
 
-function Message(options) {
+function Message(options): void {
   if (!(this instanceof Node)) {
     return new Message(options);
   }
@@ -58,7 +58,9 @@ Message.prototype.display = function(text, time, callback) {
 
   if (time === Infinity || time === -1 || time === 0) {
     var end = function() {
+      // @ts-ignore
       if (end.done) return;
+      // @ts-ignore
       end.done = true;
       if (self.scrollable) {
         try {
